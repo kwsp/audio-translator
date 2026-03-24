@@ -14,8 +14,8 @@ from audio_translator.models import Speaker, TranslatedTranscript
 
 # Gender-keyed default voices. Picked for naturalness in Mandarin output.
 _DEFAULT_VOICE_BY_GENDER: dict[str, str] = {
-    "female": "Aoede",   # warm, natural female voice
-    "male": "Puck",      # clear, natural male voice
+    "female": "Sulafat",   # warm, natural female voice
+    "male": "Charon",      # Calm, resonant, professional
     "unknown": "Kore",   # neutral fallback
 }
 
