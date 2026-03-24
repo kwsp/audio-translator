@@ -1,4 +1,3 @@
-# Audio Translator
 
 A Python CLI application and library that performs an end-to-end audio translation pipeline: **Speech-to-Text (STT)** → **Translation** → **Text-to-Speech (TTS)**.
 
@@ -87,6 +86,22 @@ audio-translator podcast.mp3 --voice-map '{"Speaker 1": "Kore", "Speaker 2": "Ao
 If you already have a `transcript.json` and want to re-run translation/TTS:
 ```bash
 audio-translator path/to/transcript.json --transcript --target-lang "French"
+```
+
+**Select Backends**
+Choose between available STT and TTS backends:
+```bash
+# Use Edge-TTS (free, no API key)
+audio-translator recording.mp3 --tts-backend edge
+
+# Use Gemini STT (default)
+audio-translator recording.mp3 --stt-backend gemini
+```
+
+**TTS-Only Mode (Skip STT + Translate)**
+If you already have a `translated_transcript.json`:
+```bash
+audio-translator translated.json --translated-transcript
 ```
 
 ## Running Tests

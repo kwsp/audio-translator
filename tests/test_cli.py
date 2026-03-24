@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import ANY, MagicMock, patch
 
 import pytest
 from audio_translator.cli import main
@@ -35,7 +35,9 @@ def test_cli_basic_flow(mock_dotenv, mock_translate, capsys):
         target_lang="French",
         voice_map=None,
         skip_stt=False,
-        tts=None,  # gemini backend: TTS injected via pipeline default
+        skip_translate=False,
+        stt=ANY,  # GeminiSTT instantiated by CLI
+        tts=None,      # tts not chosen, default used by pipeline
     )
     mock_dotenv.assert_called_once()
     captured = capsys.readouterr()

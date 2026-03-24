@@ -12,7 +12,8 @@ from dotenv import load_dotenv
 from audio_translator.pipeline import translate_audio
 
 
-_BACKENDS = ["gemini", "edge"]
+_TTS_BACKENDS = ["gemini", "edge"]
+_STT_BACKENDS = ["gemini"]
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -49,7 +50,13 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument(
         "--transcript",
         action="store_true",
-        help="Treat input as a transcript JSON file (skip STT).",
+        help="Treat input as a Transcript JSON file (skip STT only).",
+    )
+    parser.add_argument(
+        "--translated-transcript",
+        action="store_true",
+        dest="translated_transcript",
+        help="Treat input as a TranslatedTranscript JSON (skip STT + translation, TTS only).",
     )
     parser.add_argument(
         "--voice-map",
@@ -63,10 +70,16 @@ def main(argv: list[str] | None = None) -> None:
         help="Enable verbose logging.",
     )
     parser.add_argument(
-        "--backend",
+        "--tts-backend",
         default="gemini",
-        choices=_BACKENDS,
+        choices=_TTS_BACKENDS,
         help="TTS backend to use: 'gemini' (default) or 'edge' (free, no API key).",
+    )
+    parser.add_argument(
+        "--stt-backend",
+        default="gemini",
+        choices=_STT_BACKENDS,
+        help="STT backend to use: 'gemini' (default).",
     )
 
     args = parser.parse_args(argv)
@@ -86,9 +99,15 @@ def main(argv: list[str] | None = None) -> None:
 
     # Select TTS backend.
     tts = None
-    if args.backend == "edge":
+    if args.tts_backend == "edge":
         from audio_translator.backends.edge.tts import EdgeTTS  # noqa: PLC0415
         tts = EdgeTTS()
+
+    # Select STT backend (currently only Gemini supported, but ready for expansion).
+    stt = None
+    if args.stt_backend == "gemini":
+        from audio_translator.backends.gemini.stt import GeminiSTT  # noqa: PLC0415
+        stt = GeminiSTT()
 
     try:
         result = translate_audio(
@@ -98,6 +117,8 @@ def main(argv: list[str] | None = None) -> None:
             target_lang=args.target_lang,
             voice_map=voice_map,
             skip_stt=args.transcript,
+            skip_translate=args.translated_transcript,
+            stt=stt,
             tts=tts,
         )
         print(f"\nOutputs written to: {result.output_dir}/")

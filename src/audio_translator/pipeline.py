@@ -83,6 +83,7 @@ def translate_audio(
     target_lang: str = "Mandarin Chinese",
     voice_map: dict[str, str] | None = None,
     skip_stt: bool = False,
+    skip_translate: bool = False,
     stt: STTBackend | None = None,
     translator: TranslateBackend | None = None,
     tts: TTSBackend | None = None,
@@ -90,13 +91,16 @@ def translate_audio(
     """Run the full audio translation pipeline.
 
     Args:
-        input: Audio file path, URL, or transcript JSON path (if skip_stt).
+        input: Audio file path, URL, transcript JSON (if skip_stt), or
+            translated transcript JSON (if skip_translate).
         output_dir: Directory to write all outputs to. Defaults to a slug
             derived from the input filename.
         source_lang: Expected source language (hint for STT).
         target_lang: Target language for translation.
         voice_map: Optional speaker→voice name mapping.
-        skip_stt: If True, treat ``input`` as a transcript JSON file.
+        skip_stt: If True, treat ``input`` as a Transcript JSON file.
+        skip_translate: If True, treat ``input`` as a TranslatedTranscript JSON
+            and skip both STT and translation (TTS-only mode).
         stt: STT backend override (default: GeminiSTT).
         translator: Translation backend override (default: GeminiTranslate).
         tts: TTS backend override (default: GeminiTTS).
@@ -104,10 +108,7 @@ def translate_audio(
     Returns:
         PipelineResult with paths to all written files.
     """
-    stt = stt or GeminiSTT()
-    translator = translator or GeminiTranslate()
     tts = tts or GeminiTTS()
-
     out_dir = Path(output_dir) if output_dir else _default_output_dir(input)
     out_dir.mkdir(parents=True, exist_ok=True)
     logger.info("Output directory: %s", out_dir)
@@ -115,6 +116,36 @@ def translate_audio(
     transcript_path = out_dir / _TRANSCRIPT_FILENAME
     translated_path = out_dir / _TRANSLATED_FILENAME
     audio_path = out_dir / _AUDIO_FILENAME
+
+    # --- TTS-only fast path: skip both STT and translation ---
+    if skip_translate:
+        logger.info("Loading translated transcript from %s", input)
+        translated = TranslatedTranscript.model_validate_json(
+            Path(input).read_text(encoding="utf-8")
+        )
+        logger.info(
+            "Translated transcript: %d segments, %s → %s",
+            len(translated.segments),
+            translated.source_lang,
+            translated.target_lang,
+        )
+        translated_path.write_text(
+            translated.model_dump_json(indent=2), encoding="utf-8"
+        )
+        # --- Stage 3: TTS ---
+        logger.info("Synthesizing speech (%d segments)", len(translated.segments))
+        pcm_data = tts.synthesize(translated, voice_map)
+        save_audio(audio_path, pcm_data)
+        logger.info("Saved audio → %s", audio_path)
+        return PipelineResult(
+            output_dir=out_dir,
+            transcript=translated_path,   # no raw transcript available
+            translated_transcript=translated_path,
+            audio=audio_path,
+        )
+
+    stt = stt or GeminiSTT()
+    translator = translator or GeminiTranslate()
 
     # --- Stage 1: STT ---
     if skip_stt:
