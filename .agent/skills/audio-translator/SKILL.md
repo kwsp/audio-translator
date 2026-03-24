@@ -1,6 +1,6 @@
 ---
 name: audio-translator
-description: AI-powered audio translation pipeline (STT → Translate → TTS) with speaker diarization, gender-aware voice synthesis, and timestamp alignment.
+description: AI-powered audio translation pipeline (STT → Translate → TTS) with speaker diarization and gender-aware voice synthesis.
 ---
 
 # Audio Translator
@@ -12,20 +12,23 @@ Use this skill to translate spoken audio while preserving speaker identity and t
 - **Pipeline**: Automated STT (Gemini), Translation (Gemini), and TTS (Gemini or Edge-TTS).
 - **Diarization**: Automatically detects and handles multiple speakers.
 - **Gender-Aware**: Assigns gender-appropriate voices (e.g., male to `Charon`, female to `Sulafat`).
-- **Timing**: Use `--align` to match translated audio duration to original speech segments.
 - **Flexible Entry**: Start from audio, a raw transcript, or a translated transcript.
 
 ## Quick Start (CLI)
 
+### Install
+```bash
+# Install tool with optional Edge-TTS support
+uv tool install --with edge git+https://github.com/kwsp/audio-translator
+```
+
+### Usage
 ```bash
 # Full translation to Mandarin (default)
 audio-translator input.mp3 -o output/
 
 # Use free Edge-TTS backend for synthesis
-audio-translator input.mp3 --tts-backend edge
-
-# Align audio length for video synchronization
-audio-translator input.mp3 --align
+audio-translator input.mp3 --tts-backend edge -o output/
 ```
 
 ## Backend Selection

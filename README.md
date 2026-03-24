@@ -7,7 +7,6 @@ Powered by Google's Gemini models, it supports diarization, speaker gender detec
 
 - **Diarization**: Automatically detects multiple speakers in an audio file.
 - **Gender-Aware TTS**: Identifies the gender of each speaker and assigns an appropriate voice (e.g., `Charon` for male, `Sulafat` for female).
-- **Timestamp Alignment**: Matches translated audio length to original speech segments for video synchronization using the `--align` flag.
 - **Pipeline Flexibility**: 
   - Skip translation if the source and target languages match.
   - Provide a pre-transcribed JSON file to skip the STT stage.
@@ -69,12 +68,6 @@ output_dir/
 ```
 
 ### Advanced Usage
-
-**Timestamp Alignment (for Video Matching)**
-Inserts silence between speech segments to match the original audio's timestamps:
-```bash
-audio-translator video_audio.mp3 --align
-```
 
 **Override Voices**
 Manually assign voices to specific speakers using a JSON string:
