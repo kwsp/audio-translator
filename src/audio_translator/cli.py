@@ -25,9 +25,13 @@ def main(argv: list[str] | None = None) -> None:
     )
     parser.add_argument(
         "-o",
-        "--output",
-        default="output.mp3",
-        help="Output audio file path (default: output.mp3).",
+        "--output-dir",
+        default=None,
+        help=(
+            "Output directory for all pipeline artifacts "
+            "(transcript.json, translated_transcript.json, audio.mp3). "
+            "Defaults to a directory named after the input file."
+        ),
     )
     parser.add_argument(
         "--source-lang",
@@ -72,15 +76,18 @@ def main(argv: list[str] | None = None) -> None:
             sys.exit(1)
 
     try:
-        out = translate_audio(
+        result = translate_audio(
             input=args.input,
-            output=args.output,
+            output_dir=args.output_dir,
             source_lang=args.source_lang,
             target_lang=args.target_lang,
             voice_map=voice_map,
             skip_stt=args.transcript,
         )
-        print(f"Output saved to: {out}")
+        print(f"\nOutputs written to: {result.output_dir}/")
+        print(f"  transcript:            {result.transcript.name}")
+        print(f"  translated transcript: {result.translated_transcript.name}")
+        print(f"  audio:                 {result.audio.name}")
     except Exception as exc:
         logging.error("Pipeline failed: %s", exc, exc_info=args.verbose)
         sys.exit(1)
