@@ -21,21 +21,13 @@ from audio_translator.models import Speaker, TranslatedTranscript
 
 logger = logging.getLogger(__name__)
 
-# Full Edge-TTS voice names for multilingual voices.
-# These are locale-prefixed neural voice names.
-_EDGE_VOICE_FULL_NAMES: dict[str, str] = {
-    "AvaMultilingual":    "en-US-AvaMultilingualNeural",
-    "EmmaMultilingual":   "en-US-EmmaMultilingualNeural",
-    "BrianMultilingual":  "en-US-BrianMultilingualNeural",
-    "AndrewMultilingual": "en-US-AndrewMultilingualNeural",
-}
-
 # Gender-keyed voice pools (two per gender for same-gender multi-speaker).
 _DEFAULT_VOICES_BY_GENDER: dict[str, list[str]] = {
-    "female":  ["AvaMultilingual", "EmmaMultilingual"],
-    "male":    ["BrianMultilingual", "AndrewMultilingual"],
-    "unknown": ["AvaMultilingual"],
+    "female":  ["en-US-AvaMultilingualNeural", "en-US-EmmaMultilingualNeural"],
+    "male":    ["en-US-BrianMultilingualNeural", "en-US-AndrewMultilingualNeural"],
+    "unknown": ["en-US-AvaMultilingualNeural"],
 }
+_DEFAULT_VOICE = "en-US-AvaMultilingualNeural"
 
 
 def _build_gender_map(speakers: list[Speaker]) -> dict[str, str]:
@@ -132,18 +124,17 @@ class EdgeTTS(TTSBackend):
 
         full_audio = b""
         for i, seg in enumerate(transcript.segments, 1):
-            short_voice = resolved_map.get(seg.speaker, "AvaMultilingual")
-            full_voice = _EDGE_VOICE_FULL_NAMES.get(short_voice, short_voice)
+            voice = resolved_map.get(seg.speaker, _DEFAULT_VOICE)
 
             logger.info(
                 "Synthesizing segment %d/%d [%s, %s]",
                 i,
                 len(transcript.segments),
                 seg.speaker,
-                full_voice,
+                voice,
             )
 
-            mp3_data = asyncio.run(_synthesize_segment(seg.translated_text, full_voice))
+            mp3_data = asyncio.run(_synthesize_segment(seg.translated_text, voice))
             full_audio += _mp3_bytes_to_pcm(mp3_data)
 
         return full_audio

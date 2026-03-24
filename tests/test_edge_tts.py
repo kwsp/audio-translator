@@ -11,7 +11,6 @@ from audio_translator.backends.edge.tts import (
     EdgeTTS,
     _build_gender_map,
     _get_voice_map,
-    _EDGE_VOICE_FULL_NAMES,
 )
 from audio_translator.models import Speaker, TranslatedSegment, TranslatedTranscript
 
@@ -25,8 +24,8 @@ def test_edge_voice_mapping_gender():
     ]
     gmap = _build_gender_map(speakers)
     vmap = _get_voice_map(["A", "B"], gmap, None)
-    assert vmap["A"] == "AvaMultilingual"
-    assert vmap["B"] == "BrianMultilingual"
+    assert vmap["A"] == "en-US-AvaMultilingualNeural"
+    assert vmap["B"] == "en-US-BrianMultilingualNeural"
 
 
 def test_edge_same_gender_two_speakers():
@@ -37,8 +36,8 @@ def test_edge_same_gender_two_speakers():
     ]
     gmap = _build_gender_map(speakers)
     vmap = _get_voice_map(["F1", "F2"], gmap, None)
-    assert vmap["F1"] == "AvaMultilingual"
-    assert vmap["F2"] == "EmmaMultilingual"
+    assert vmap["F1"] == "en-US-AvaMultilingualNeural"
+    assert vmap["F2"] == "en-US-EmmaMultilingualNeural"
 
 
 def test_edge_same_gender_two_male_speakers():
@@ -48,21 +47,17 @@ def test_edge_same_gender_two_male_speakers():
     ]
     gmap = _build_gender_map(speakers)
     vmap = _get_voice_map(["M1", "M2"], gmap, None)
-    assert vmap["M1"] == "BrianMultilingual"
-    assert vmap["M2"] == "AndrewMultilingual"
+    assert vmap["M1"] == "en-US-BrianMultilingualNeural"
+    assert vmap["M2"] == "en-US-AndrewMultilingualNeural"
 
 
 def test_edge_voice_user_override():
     speakers = [Speaker(name="A", gender="female")]
     gmap = _build_gender_map(speakers)
-    vmap = _get_voice_map(["A"], gmap, {"A": "BrianMultilingual"})
-    assert vmap["A"] == "BrianMultilingual"
+    vmap = _get_voice_map(["A"], gmap, {"A": "en-US-BrianMultilingualNeural"})
+    assert vmap["A"] == "en-US-BrianMultilingualNeural"
 
 
-def test_edge_full_voice_names():
-    """Verify the locale prefixes are present."""
-    assert _EDGE_VOICE_FULL_NAMES["AvaMultilingual"] == "en-US-AvaMultilingualNeural"
-    assert _EDGE_VOICE_FULL_NAMES["BrianMultilingual"] == "en-US-BrianMultilingualNeural"
 
 
 # --- Synthesis tests (mocked) ------------------------------------------------
@@ -119,9 +114,9 @@ def test_edge_tts_correct_voices(mock_synth, mock_convert):
 
     calls = mock_synth.call_args_list
     # Segment 1: Speaker 1 (male) → Brian
-    assert "BrianMultilingual" in calls[0][0][1]
+    assert "en-US-BrianMultilingualNeural" in calls[0][0][1]
     # Segment 2: Speaker 2 (female) → Ava
-    assert "AvaMultilingual" in calls[1][0][1]
+    assert "en-US-AvaMultilingualNeural" in calls[1][0][1]
 
 
 @patch("audio_translator.backends.edge.tts._mp3_bytes_to_pcm")
