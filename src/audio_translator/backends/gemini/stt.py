@@ -14,7 +14,7 @@ from google import genai
 from google.genai import types
 
 from audio_translator.backends.base import STTBackend
-from audio_translator.models import Transcript
+from audio_translator.models import Transcript  # noqa: F401 (Speaker imported via Transcript schema)
 
 # Gemini Files API threshold (20 MB).
 _UPLOAD_THRESHOLD = 20 * 1024 * 1024
@@ -33,9 +33,11 @@ Transcribe the speech in this audio with diarization.
 
 Requirements:
 1. Identify each distinct speaker and label them as "Speaker 1", "Speaker 2", etc.
-2. Provide a timestamp (MM:SS format) for each segment.
-3. Transcribe the spoken text accurately in the original language.
-4. Detect the primary language of the audio and report it.
+2. For each speaker, detect their gender ("male", "female", or "unknown") based on
+   voice characteristics such as pitch and timbre.
+3. Provide a timestamp (MM:SS format) for each segment.
+4. Transcribe the spoken text accurately in the original language.
+5. Detect the primary language of the audio and report it.
 
 Output ONLY the JSON matching the provided schema.
 """

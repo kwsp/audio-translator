@@ -63,6 +63,7 @@ def _transcript_to_translated(transcript: Transcript) -> TranslatedTranscript:
     return TranslatedTranscript(
         source_lang=transcript.lang,
         target_lang=transcript.lang,
+        speakers=transcript.speakers,
         segments=[
             TranslatedSegment(
                 speaker=seg.speaker,

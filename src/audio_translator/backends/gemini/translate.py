@@ -52,4 +52,7 @@ class GeminiTranslate(TranslateBackend):
             ),
         )
 
-        return TranslatedTranscript.model_validate_json(response.text)
+        result = TranslatedTranscript.model_validate_json(response.text)
+        # Carry speaker gender metadata through from the source transcript.
+        result.speakers = transcript.speakers
+        return result
