@@ -137,6 +137,7 @@ def test_pipeline_skip_stt(mocker, tmp_path):
     # Run pipeline with skip_stt=True
     translate_audio(
         input=str(trans_file),
+        output_dir=tmp_path / "test_skip_out",
         skip_stt=True,
         target_lang="Spanish",
         stt=MagicMock(),  # Mandatory to avoid real GeminiSTT init
