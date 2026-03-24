@@ -2,9 +2,12 @@
 
 Supports single-speaker and multi-speaker (up to 2) synthesis.
 Voice profiles are selected based on detected speaker gender from the Transcript.
+Supports two distinct voices per gender for cases where both speakers share a gender.
 """
 
 from __future__ import annotations
+
+import logging
 
 from google import genai
 from google.genai import types
@@ -12,11 +15,14 @@ from google.genai import types
 from audio_translator.backends.base import TTSBackend
 from audio_translator.models import Speaker, TranslatedTranscript
 
-# Gender-keyed default voices. Picked for naturalness in Mandarin output.
-_DEFAULT_VOICE_BY_GENDER: dict[str, str] = {
-    "female": "Sulafat",   # warm, natural female voice
-    "male": "Charon",      # Calm, resonant, professional
-    "unknown": "Kore",   # neutral fallback
+logger = logging.getLogger(__name__)
+
+# Gender-keyed default voices (ordered by preference).
+# Two voices per gender handle the case where both speakers share a gender.
+_DEFAULT_VOICES_BY_GENDER: dict[str, list[str]] = {
+    "female":  ["Sulafat", "Aoede"],   # warm female, expressive female
+    "male":    ["Charon",  "Puck"],    # calm resonant, clear natural
+    "unknown": ["Kore"],               # neutral fallback
 }
 
 
@@ -30,15 +36,24 @@ def _get_voice_map(
     gender_map: dict[str, str],
     user_map: dict[str, str] | None,
 ) -> dict[str, str]:
-    """Resolve speaker → voice name, respecting user overrides and gender."""
+    """Resolve speaker → voice name, respecting user overrides and gender.
+
+    Speakers of the same gender each receive a distinct voice, cycling through
+    the pool (e.g., two females → Sulafat, Aoede).
+    """
     voice_map: dict[str, str] = {}
+    gender_usage: dict[str, int] = {}  # count how many speakers per gender
+
     for speaker in speaker_names:
         if user_map and speaker in user_map:
-            # Explicit user override takes priority.
             voice_map[speaker] = user_map[speaker]
         else:
             gender = gender_map.get(speaker, "unknown")
-            voice_map[speaker] = _DEFAULT_VOICE_BY_GENDER[gender]
+            pool = _DEFAULT_VOICES_BY_GENDER.get(gender, _DEFAULT_VOICES_BY_GENDER["unknown"])
+            idx = gender_usage.get(gender, 0)
+            voice_map[speaker] = pool[idx % len(pool)]
+            gender_usage[gender] = idx + 1
+
     return voice_map
 
 
@@ -73,7 +88,7 @@ class GeminiTTS(TTSBackend):
 
         for speaker, voice in resolved_map.items():
             gender = gender_map.get(speaker, "unknown")
-            print(f"  {speaker} ({gender}) → voice: {voice}")
+            logger.info("  %s (%s) → voice: %s", speaker, gender, voice)
 
         if len(speakers) <= 1:
             speech_config = self._single_speaker_config(

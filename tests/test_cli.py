@@ -35,6 +35,7 @@ def test_cli_basic_flow(mock_dotenv, mock_translate, capsys):
         target_lang="French",
         voice_map=None,
         skip_stt=False,
+        tts=None,  # gemini backend: TTS injected via pipeline default
     )
     mock_dotenv.assert_called_once()
     captured = capsys.readouterr()

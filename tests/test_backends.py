@@ -140,12 +140,35 @@ def test_voice_mapping_logic():
     ]
     gmap = _build_gender_map(speakers)
 
-    # 1. Test gender mapping
+    # 1. Test gender-based voice assignment
     vmap = _get_voice_map(["Man", "Woman", "Mystery"], gmap, None)
-    assert vmap["Man"] == "Charon"  # Updated voice in recent change
+    assert vmap["Man"] == "Charon"
     assert vmap["Woman"] == "Sulafat"
     assert vmap["Mystery"] == "Kore"
 
     # 2. Test user override
     vmap_override = _get_voice_map(["Man"], gmap, {"Man": "Puck"})
     assert vmap_override["Man"] == "Puck"
+
+
+def test_gemini_same_gender_two_speakers():
+    """Two speakers of the same gender should each get a distinct voice."""
+    from audio_translator.backends.gemini.tts import _build_gender_map, _get_voice_map
+
+    speakers = [
+        Speaker(name="F1", gender="female"),
+        Speaker(name="F2", gender="female"),
+    ]
+    gmap = _build_gender_map(speakers)
+    vmap = _get_voice_map(["F1", "F2"], gmap, None)
+    assert vmap["F1"] == "Sulafat"
+    assert vmap["F2"] == "Aoede"
+
+    speakers_male = [
+        Speaker(name="M1", gender="male"),
+        Speaker(name="M2", gender="male"),
+    ]
+    gmap_male = _build_gender_map(speakers_male)
+    vmap_male = _get_voice_map(["M1", "M2"], gmap_male, None)
+    assert vmap_male["M1"] == "Charon"
+    assert vmap_male["M2"] == "Puck"

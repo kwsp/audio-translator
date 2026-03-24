@@ -12,6 +12,9 @@ from dotenv import load_dotenv
 from audio_translator.pipeline import translate_audio
 
 
+_BACKENDS = ["gemini", "edge"]
+
+
 def main(argv: list[str] | None = None) -> None:
     load_dotenv()
 
@@ -59,6 +62,12 @@ def main(argv: list[str] | None = None) -> None:
         action="store_true",
         help="Enable verbose logging.",
     )
+    parser.add_argument(
+        "--backend",
+        default="gemini",
+        choices=_BACKENDS,
+        help="TTS backend to use: 'gemini' (default) or 'edge' (free, no API key).",
+    )
 
     args = parser.parse_args(argv)
 
@@ -75,6 +84,12 @@ def main(argv: list[str] | None = None) -> None:
             print(f"Error: invalid --voice-map JSON: {exc}", file=sys.stderr)
             sys.exit(1)
 
+    # Select TTS backend.
+    tts = None
+    if args.backend == "edge":
+        from audio_translator.backends.edge.tts import EdgeTTS  # noqa: PLC0415
+        tts = EdgeTTS()
+
     try:
         result = translate_audio(
             input=args.input,
@@ -83,6 +98,7 @@ def main(argv: list[str] | None = None) -> None:
             target_lang=args.target_lang,
             voice_map=voice_map,
             skip_stt=args.transcript,
+            tts=tts,
         )
         print(f"\nOutputs written to: {result.output_dir}/")
         print(f"  transcript:            {result.transcript.name}")
