@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68.0", "setuptools-scm>=8.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "audio-translator"
+version = "0.1.0"
+description = "Translate spoken audio between languages using STT, translation, and TTS pipelines."
+requires-python = ">=3.11"
+dependencies = [
+    "google-genai>=1.0.0",
+    "pydantic>=2.0",
+    "python-dotenv>=1.0",
+]
+
+[project.scripts]
+audio-translator = "audio_translator.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
