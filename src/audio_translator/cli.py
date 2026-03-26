@@ -9,7 +9,12 @@ import sys
 
 from dotenv import load_dotenv
 
-from audio_translator.pipeline import translate_audio
+from audio_translator.pipeline import (
+    synthesize_translated_transcript,
+    translate_audio_to_audio,
+    translate_text_to_audio,
+    translate_transcript_to_audio,
+)
 
 
 _TTS_BACKENDS = ["gemini", "edge"]
@@ -25,7 +30,15 @@ def main(argv: list[str] | None = None) -> None:
     )
     parser.add_argument(
         "input",
-        help="Audio file path, URL, or transcript JSON (with --transcript).",
+        nargs="?",
+        default=None,
+        help="Audio file path, URL, or transcript JSON (with --transcript). Not required when --text is used.",
+    )
+    parser.add_argument(
+        "--text",
+        default=None,
+        metavar="PASSAGE",
+        help="Plain-text passage to translate. Wrapped into a single female speaker transcript; skips STT.",
     )
     parser.add_argument(
         "-o",
@@ -84,6 +97,13 @@ def main(argv: list[str] | None = None) -> None:
 
     args = parser.parse_args(argv)
 
+    # Read piped stdin as text input when no other text/input source is given.
+    if args.input is None and args.text is None:
+        if not sys.stdin.isatty():
+            args.text = sys.stdin.read()
+        else:
+            parser.error("provide a positional input file/URL, --text PASSAGE, or pipe text via stdin")
+
     logging.basicConfig(
         level=logging.DEBUG if args.verbose else logging.INFO,
         format="%(levelname)s: %(message)s",
@@ -110,17 +130,39 @@ def main(argv: list[str] | None = None) -> None:
         stt = GeminiSTT()
 
     try:
-        result = translate_audio(
-            input=args.input,
-            output_dir=args.output_dir,
-            source_lang=args.source_lang,
-            target_lang=args.target_lang,
-            voice_map=voice_map,
-            skip_stt=args.transcript,
-            skip_translate=args.translated_transcript,
-            stt=stt,
-            tts=tts,
-        )
+        if args.translated_transcript:
+            result = synthesize_translated_transcript(
+                translated_transcript=args.input,
+                output_dir=args.output_dir,
+                voice_map=voice_map,
+                tts=tts,
+            )
+        elif args.text:
+            result = translate_text_to_audio(
+                text=args.text,
+                output_dir=args.output_dir,
+                source_lang=args.source_lang,
+                target_lang=args.target_lang,
+                voice_map=voice_map,
+                tts=tts,
+            )
+        elif args.transcript:
+            result = translate_transcript_to_audio(
+                transcript=args.input,
+                output_dir=args.output_dir,
+                target_lang=args.target_lang,
+                voice_map=voice_map,
+                tts=tts,
+            )
+        else:
+            result = translate_audio_to_audio(
+                input=args.input,
+                output_dir=args.output_dir,
+                target_lang=args.target_lang,
+                voice_map=voice_map,
+                stt=stt,
+                tts=tts,
+            )
         print(f"\nOutputs written to: {result.output_dir}/")
         print(f"  transcript:            {result.transcript.name}")
         print(f"  translated transcript: {result.translated_transcript.name}")
