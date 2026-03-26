@@ -2,9 +2,6 @@
 
 Uses Microsoft Edge's free neural TTS service via the edge-tts Python library.
 No API key required - works entirely through the Edge TTS API.
-
-Install the optional dependency:
-    uv pip install -e ".[edge]"
 """
 
 from __future__ import annotations
@@ -58,17 +55,13 @@ def _get_voice_map(
 
 async def _synthesize_segment(text: str, voice_full_name: str) -> bytes:
     """Call edge-tts to synthesize a single text segment; returns MP3 bytes."""
-    try:
-        import edge_tts  # noqa: PLC0415  (optional dependency)
-    except ImportError as exc:
-        raise ImportError(
-            "edge-tts is not installed. Run: uv pip install -e '.[edge]'"
-        ) from exc
+    import edge_tts  # noqa: PLC0415
 
-    communicate = edge_tts.Communicate(text, voice_full_name)
+    communicate = edge_tts.Communicate(text, voice_full_name, rate="+10%")
     mp3_chunks: list[bytes] = []
     async for chunk in communicate.stream():
         if chunk["type"] == "audio":
+            assert "data" in chunk
             mp3_chunks.append(chunk["data"])
 
     return b"".join(mp3_chunks)
@@ -104,9 +97,6 @@ class EdgeTTS(TTSBackend):
 
     Synthesizes each segment individually and stitches the PCM output.
     Supports gender-aware voice assignment with two voices per gender.
-
-    Requires the ``edge-tts`` optional dependency:
-        uv pip install -e ".[edge]"
     """
 
     def synthesize(
